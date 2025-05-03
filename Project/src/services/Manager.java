@@ -1,7 +1,6 @@
 package services;
 
 import java.io.*;
-
 import java.util.*;
 import students.*;
 
@@ -122,7 +121,6 @@ public class Manager {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.equals("==== STUDENT ====")) {
-                    // Check previous block
                     if (!currentBlock.isEmpty() && !skipBlock) {
                         fileLines.addAll(currentBlock);
                     }
@@ -132,28 +130,24 @@ public class Manager {
 
                 currentBlock.add(line);
 
-                // Check if this is the student we want to overwrite
                 if (line.startsWith("ID: ")) {
                     int id = Integer.parseInt(line.substring(4).trim());
                     if (id == studentId) {
-                        skipBlock = true; // Mark to skip this block
+                        skipBlock = true;
                     }
                 }
             }
 
-            // Don't forget the last block
             if (!currentBlock.isEmpty() && !skipBlock) {
                 fileLines.addAll(currentBlock);
             }
 
         } catch (FileNotFoundException e) {
-            // File may not exist yet, that's okay
         } catch (IOException e) {
             System.err.println("Error reading file: " + e.getMessage());
             return;
         }
 
-        // Add the updated student block
         List<String> newBlock = new ArrayList<>();
         String type = (student instanceof TelecommunicationsStudent) ? "telecom" : "cyber";
         newBlock.add("==== STUDENT ====");
@@ -166,7 +160,6 @@ public class Manager {
 
         fileLines.addAll(newBlock);
 
-        // Write everything back to the file
         try (PrintWriter pw = new PrintWriter(new FileWriter(filename))) {
             for (String l : fileLines) {
                 pw.println(l);

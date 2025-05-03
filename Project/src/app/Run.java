@@ -7,7 +7,7 @@ import students.Student;
 public class Run {
     private static Scanner scanner = new Scanner(System.in);
     private static Database database = new Database();
-   private static Manager manager = new Manager();  // NEW: use Manager!
+   private static Manager manager = new Manager();
 
     public static void main(String[] args) {
         System.out.println("University Student Database Management System");
@@ -84,7 +84,7 @@ public class Run {
         String lastName = scanner.nextLine();
         int birthYear = getIntInput("Enter birth year: ");
 
-        manager.addStudent(type, firstName, lastName, birthYear);  // ✅ now uses Manager
+        manager.addStudent(type, firstName, lastName, birthYear);
         System.out.println("Student added successfully.");
     }
 
@@ -97,18 +97,18 @@ public class Run {
             return;
         }
 
-        manager.addGrade(studentId, grade);  // ✅ now uses Manager
+        manager.addGrade(studentId, grade);
         System.out.println("Grade added successfully.");
     }
 
     private static void removeStudent() {
         int studentId = getIntInput("Enter student ID to remove: ");
-        manager.removeStudent(studentId);  // ✅ now uses Manager
+        manager.removeStudent(studentId);
     }
 
     private static void findStudent() {
         int studentId = getIntInput("Enter student ID: ");
-        Student student = manager.findStudentById(studentId);  // ✅ now uses Manager
+        Student student = manager.findStudentById(studentId);
         if (student != null) {
             System.out.println(student);
         } else {
@@ -118,7 +118,7 @@ public class Run {
 
     private static void performStudentSkill() {
         int studentId = getIntInput("Enter student ID: ");
-        manager.performStudentSkill(studentId);  // ✅ now uses Manager
+        manager.performStudentSkill(studentId);
     }
 
     private static void saveStudentToFile() {
@@ -126,7 +126,7 @@ public class Run {
         scanner.nextLine();
         System.out.print("Enter filename: ");
         String filename = scanner.nextLine();
-        manager.saveStudentToFile(studentId, filename);  // ✅ now uses Manager
+        manager.saveStudentToFile(studentId, filename);
     }
 
     private static void loadStudentFromFile() {
@@ -134,6 +134,6 @@ public class Run {
         scanner.nextLine();
         System.out.print("Enter filename: ");
         String filename = scanner.nextLine();
-        manager.loadStudentFromFile(filename, studentId);  // ✅ now uses Manager
+        manager.loadStudentFromFile(filename, studentId);
     }
 }
