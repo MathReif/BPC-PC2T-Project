@@ -1,19 +1,20 @@
-import java.util.*;
+package app;
 
-import db.*;
+import java.util.*;
+import services.*;
 import students.Student;
 
-public class Test {
+public class Run {
     private static Scanner scanner = new Scanner(System.in);
-    private static DatabaseManager dbManager = new DatabaseManager();
+    private static Database database = new Database();
+   private static Manager manager = new Manager();  // NEW: use Manager!
 
     public static void main(String[] args) {
         System.out.println("University Student Database Management System");
 
-        // Add shutdown hook to save on exit
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            dbManager.saveAllToDatabase();
-            dbManager.close();
+            manager.saveAllStudentsToDatabase();
+            database.close();
             System.out.println("\nData saved. Database connection closed.");
         }));
 
@@ -23,41 +24,18 @@ public class Test {
             int choice = getIntInput("Enter your choice: ");
 
             switch (choice) {
-                case 1:
-                    addStudent();
-                    break;
-                case 2:
-                    addGrade();
-                    break;
-                case 3:
-                    removeStudent();
-                    break;
-                case 4:
-                    findStudent();
-                    break;
-                case 5:
-                    performStudentSkill();
-                    break;
-                case 6:
-                    dbManager.printAllStudents();
-                    break;
-                case 7:
-                    dbManager.printDepartmentAverages();
-                    break;
-                case 8:
-                    dbManager.printStudentCounts();
-                    break;
-                case 9:
-                    saveStudentToFile();
-                    break;
-                case 10:
-                    loadStudentFromFile();
-                    break;
-                case 0:
-                    running = false;
-                    break;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
+                case 1 -> addStudent();
+                case 2 -> addGrade();
+                case 3 -> removeStudent();
+                case 4 -> findStudent();
+                case 5 -> performStudentSkill();
+                case 6 -> manager.printAllStudents();
+                case 7 -> manager.printDepartmentAverages();
+                case 8 -> manager.printStudentCounts();
+                case 9 -> saveStudentToFile();
+                case 10 -> loadStudentFromFile();
+                case 0 -> running = false;
+                default -> System.out.println("Invalid choice. Please try again.");
             }
         }
 
@@ -99,14 +77,14 @@ public class Test {
             return;
         }
 
-        scanner.nextLine(); // consume newline
+        scanner.nextLine();
         System.out.print("Enter first name: ");
         String firstName = scanner.nextLine();
         System.out.print("Enter last name: ");
         String lastName = scanner.nextLine();
         int birthYear = getIntInput("Enter birth year: ");
 
-        dbManager.addStudent(type, firstName, lastName, birthYear);
+        manager.addStudent(type, firstName, lastName, birthYear);  // ✅ now uses Manager
         System.out.println("Student added successfully.");
     }
 
@@ -119,18 +97,18 @@ public class Test {
             return;
         }
 
-        dbManager.addGrade(studentId, grade);
+        manager.addGrade(studentId, grade);  // ✅ now uses Manager
         System.out.println("Grade added successfully.");
     }
 
     private static void removeStudent() {
         int studentId = getIntInput("Enter student ID to remove: ");
-        dbManager.removeStudent(studentId);
+        manager.removeStudent(studentId);  // ✅ now uses Manager
     }
 
     private static void findStudent() {
         int studentId = getIntInput("Enter student ID: ");
-        Student student = dbManager.findStudentById(studentId);
+        Student student = manager.findStudentById(studentId);  // ✅ now uses Manager
         if (student != null) {
             System.out.println(student);
         } else {
@@ -140,22 +118,22 @@ public class Test {
 
     private static void performStudentSkill() {
         int studentId = getIntInput("Enter student ID: ");
-        dbManager.performStudentSkill(studentId);
+        manager.performStudentSkill(studentId);  // ✅ now uses Manager
     }
 
     private static void saveStudentToFile() {
         int studentId = getIntInput("Enter student ID to save: ");
-        scanner.nextLine(); // consume newline
+        scanner.nextLine();
         System.out.print("Enter filename: ");
         String filename = scanner.nextLine();
-        dbManager.saveStudentToFile(studentId, filename);
+        manager.saveStudentToFile(studentId, filename);  // ✅ now uses Manager
     }
 
     private static void loadStudentFromFile() {
-    	int studentId = getIntInput("Enter student ID to load: ");
-        scanner.nextLine(); // consume newline
+        int studentId = getIntInput("Enter student ID to load: ");
+        scanner.nextLine();
         System.out.print("Enter filename: ");
         String filename = scanner.nextLine();
-        dbManager.loadStudentFromFile(filename, studentId);
+        manager.loadStudentFromFile(filename, studentId);  // ✅ now uses Manager
     }
 }

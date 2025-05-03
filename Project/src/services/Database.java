@@ -1,25 +1,16 @@
-package db;
+package services;
 
-import java.util.*;
-import java.io.*;
 import java.sql.*;
+import java.util.*;
 import students.*;
 
-public class DatabaseManager {
-    private List<Student> telecommunicationsStudents;
-    private List<Student> cybersecurityStudents;
-    private int nextId;
+public class Database {
     private Connection dbConnection;
 
-    public DatabaseManager() {
-        telecommunicationsStudents = new ArrayList<>();
-        cybersecurityStudents = new ArrayList<>();
-        nextId = 1;
+    public Database() {
         connectToDatabase();
-        loadFromDatabase(); // Load students from DB on startup
     }
 
-    
     private void connectToDatabase() {
         try {
             dbConnection = DriverManager.getConnection("jdbc:sqlite:database/students.db");
@@ -32,237 +23,23 @@ public class DatabaseManager {
     private void createTables() throws SQLException {
         try (Statement stmt = dbConnection.createStatement()) {
             stmt.execute("CREATE TABLE IF NOT EXISTS students (" +
-                         "id INTEGER PRIMARY KEY, " +
-                         "type TEXT, " +
-                         "first_name TEXT, " +
-                         "last_name TEXT, " +
-                         "birth_year INTEGER)");
-
+                    "id INTEGER PRIMARY KEY, " +
+                    "type TEXT, " +
+                    "first_name TEXT, " +
+                    "last_name TEXT, " +
+                    "birth_year INTEGER)");
             stmt.execute("CREATE TABLE IF NOT EXISTS grades (" +
-                         "student_id INTEGER, " +
-                         "grade INTEGER, " +
-                         "FOREIGN KEY(student_id) REFERENCES students(id))");
+                    "student_id INTEGER, " +
+                    "grade INTEGER, " +
+                    "FOREIGN KEY(student_id) REFERENCES students(id))");
         }
-    }
+   
+}
 
-    public void addStudent(int type, String firstName, String lastName, int birthYear) {
-        Student student;
-        if (type == 1) {
-            student = new TelecommunicationsStudent(nextId, firstName, lastName, birthYear);
-            telecommunicationsStudents.add(student);
-        } else {
-            student = new CybersecurityStudent(nextId, firstName, lastName, birthYear);
-            cybersecurityStudents.add(student);
-        }
-        nextId++;
-    }
-
-    public void addGrade(int studentId, int grade) {
-        Student student = findStudentById(studentId);
-        if (student != null) {
-            student.addGrade(grade);
-        } else {
-            System.out.println("Student with ID " + studentId + " not found.");
-        }
-    }
-
-    public void removeStudent(int studentId) {
-        Student student = findStudentById(studentId);
-        if (student != null) {
-            if (student instanceof TelecommunicationsStudent) {
-                telecommunicationsStudents.remove(student);
-            } else {
-                cybersecurityStudents.remove(student);
-            }
-            removeStudentFromDatabase(studentId);
-            System.out.println("Student with ID " + studentId + " has been removed.");
-        } else {
-            System.out.println("Student with ID " + studentId + " not found.");
-        }
-    }
-
-    private void removeStudentFromDatabase(int studentId) {
-        try (PreparedStatement pstmt1 = dbConnection.prepareStatement("DELETE FROM grades WHERE student_id = ?");
-             PreparedStatement pstmt2 = dbConnection.prepareStatement("DELETE FROM students WHERE id = ?")) {
-            pstmt1.setInt(1, studentId);
-            pstmt1.executeUpdate();
-
-            pstmt2.setInt(1, studentId);
-            pstmt2.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Error removing student from database: " + e.getMessage());
-        }
-    }
-
-    public Student findStudentById(int studentId) {
-        for (Student s : telecommunicationsStudents) {
-            if (s.getId() == studentId) return s;
-        }
-        for (Student s : cybersecurityStudents) {
-            if (s.getId() == studentId) return s;
-        }
-        return null;
-    }
-
-    public void performStudentSkill(int studentId) {
-        Student student = findStudentById(studentId);
-        if (student != null) {
-            student.performSkill();
-        } else {
-            System.out.println("Student with ID " + studentId + " not found.");
-        }
-    }
-
-    public void printAllStudents() {
-        System.out.println("\nTelecommunications Students:");
-        telecommunicationsStudents.sort(Comparator.comparing(Student::getLastName));
-        telecommunicationsStudents.forEach(System.out::println);
-
-        System.out.println("\nCybersecurity Students:");
-        cybersecurityStudents.sort(Comparator.comparing(Student::getLastName));
-        cybersecurityStudents.forEach(System.out::println);
-    }
-
-    public void printDepartmentAverages() {
-        double telecomAvg = calculateDepartmentAverage(telecommunicationsStudents);
-        double cyberAvg = calculateDepartmentAverage(cybersecurityStudents);
-
-        System.out.println("\nDepartment Averages:");
-        System.out.printf("Telecommunications: %.2f\n", telecomAvg);
-        System.out.printf("Cybersecurity: %.2f\n", cyberAvg);
-    }
-
-    private double calculateDepartmentAverage(List<Student> students) {
-        if (students.isEmpty()) return 0.0;
-        double sum = 0;
-        for (Student s : students) {
-            sum += s.getAverage();
-        }
-        return sum / students.size();
-    }
-
-    public void printStudentCounts() {
-        System.out.println("\nStudent Counts:");
-        System.out.println("Telecommunications: " + telecommunicationsStudents.size());
-        System.out.println("Cybersecurity: " + cybersecurityStudents.size());
-    }
-
-    public void saveStudentToFile(int studentId, String filename) {
-        Student student = findStudentById(studentId);
-        if (student != null) {
-            try (PrintWriter pw = new PrintWriter(new FileWriter(filename, true))) {
-                String type = (student instanceof TelecommunicationsStudent) ? "telecom" : "cyber";
-                pw.println("==== STUDENT ====");  // Separator between students
-                pw.println("TYPE: " + type);
-                pw.println("ID: " + student.getId());
-                pw.println("FirstName: " + student.getFirstName());
-                pw.println("LastName: " + student.getLastName());
-                pw.println("BirthYear: " + student.getBirthYear());
-                pw.println("Grades: " + student.getGrades().toString().replaceAll("[\\[\\]\\s]", "")); // e.g., 4,5,4
-                System.out.println("Student saved to text file: " + filename);
-            } catch (IOException e) {
-                System.err.println("Error saving student to file: " + e.getMessage());
-            }
-        } else {
-            System.out.println("Student with ID " + studentId + " not found.");
-        }
-    }
-
-    public void loadStudentFromFile(String filename, int targetId) {
-        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-            String line;
-            boolean found = false;
-            while ((line = br.readLine()) != null) {
-                System.out.println("Reading line: " + line);  // Debugging output
-
-                if (line.startsWith("==== STUDENT ====")) {
-                    String type = null, firstName = null, lastName = null, gradesLine = null;
-                    int id = -1, birthYear = -1;
-
-                    // Read the next lines to gather the student data
-                    for (int i = 0; i < 5; i++) {
-                        line = br.readLine();
-                        if (line != null && line.contains(": ")) {
-                            System.out.println("Processing line: " + line); // Debug output
-                            String[] parts = line.split(": ");
-                            if (parts.length > 1) {
-                                String key = parts[0].trim().toLowerCase(); // Handle case insensitivity
-                                String value = parts[1].trim();
-
-                                switch (key) {
-                                    case "type":
-                                        type = value;
-                                        break;
-                                    case "id":
-                                        id = Integer.parseInt(value);
-                                        break;
-                                    case "firstname":
-                                        firstName = value;
-                                        break;
-                                    case "lastname":
-                                        lastName = value;
-                                        break;
-                                    case "birthyear":
-                                        birthYear = Integer.parseInt(value);
-                                        break;
-                                    case "grades":
-                                        gradesLine = value;
-                                        break;
-                                }
-                            }
-                        }
-                    }
-
-                    System.out.println("Parsed student details: id = " + id + ", firstName = " + firstName + ", lastName = " + lastName);
-
-                    if (id == targetId) {
-                        // Check if student already exists in memory
-                        if (findStudentById(id) != null) {
-                            System.out.println("Student with ID " + id + " already exists in memory.");
-                            return;
-                        }
-
-                        Student student;
-                        if (type != null && type.equalsIgnoreCase("telecom")) {
-                            student = new TelecommunicationsStudent(id, firstName, lastName, birthYear);
-                            telecommunicationsStudents.add(student);
-                        } else {
-                            student = new CybersecurityStudent(id, firstName, lastName, birthYear);
-                            cybersecurityStudents.add(student);
-                        }
-
-                        // Parse grades
-                        if (gradesLine != null && !gradesLine.isEmpty()) {
-                            String[] gradesArray = gradesLine.split(",");
-                            for (String g : gradesArray) {
-                                student.addGrade(Integer.parseInt(g.trim()));
-                            }
-                        }
-
-                        // Update nextId if needed
-                        if (id >= nextId) {
-                            nextId = id + 1;
-                        }
-
-                        System.out.println("Loaded student: " + student);
-                        found = true;
-                        break;  // Stop after finding the student
-                    }
-                }
-            }
-
-            if (!found) {
-                System.out.println("Student with ID " + targetId + " not found in the file.");
-            }
-        } catch (IOException | NumberFormatException e) {
-            System.err.println("Error loading student from file: " + e.getMessage());
-        }
-    }
-
-    private void loadFromDatabase() {
+    public void loadAllStudents(List<Student> telecomList, List<Student> cyberList) {
+        Map<Integer, Student> studentMap = new HashMap<>();
         try (Statement stmt = dbConnection.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM students")) {
-
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String type = rs.getString("type");
@@ -273,14 +50,16 @@ public class DatabaseManager {
                 Student student;
                 if (type.equals("telecom")) {
                     student = new TelecommunicationsStudent(id, firstName, lastName, birthYear);
-                    telecommunicationsStudents.add(student);
+                    telecomList.add(student);
                 } else {
                     student = new CybersecurityStudent(id, firstName, lastName, birthYear);
-                    cybersecurityStudents.add(student);
+                    cyberList.add(student);
                 }
 
-                if (id >= nextId) {
-                    nextId = id + 1;
+                studentMap.put(id, student);
+
+                if (id >= Manager.nextIdStatic) {
+                    Manager.nextIdStatic = id + 1;
                 }
             }
 
@@ -289,33 +68,33 @@ public class DatabaseManager {
                 while (gradeRs.next()) {
                     int studentId = gradeRs.getInt("student_id");
                     int grade = gradeRs.getInt("grade");
-
-                    Student student = findStudentById(studentId);
+                    Student student = studentMap.get(studentId);
                     if (student != null) {
                         student.addGrade(grade);
                     }
                 }
             }
+
+            System.out.println("Loaded all students from database.");
         } catch (SQLException e) {
             System.err.println("Error loading from database: " + e.getMessage());
         }
     }
+    
 
-    public void saveAllToDatabase() {
+    public void saveAllToDatabase(List<Student> telecomStudents, List<Student> cyberStudents) {
         try {
             try (Statement stmt = dbConnection.createStatement()) {
                 stmt.execute("DELETE FROM students");
                 stmt.execute("DELETE FROM grades");
             }
-
-            for (Student student : telecommunicationsStudents) {
+            for (Student student : telecomStudents) {
                 saveStudentToDatabase(student);
                 for (int grade : student.getGrades()) {
                     saveGradeToDatabase(student.getId(), grade);
                 }
             }
-
-            for (Student student : cybersecurityStudents) {
+            for (Student student : cyberStudents) {
                 saveStudentToDatabase(student);
                 for (int grade : student.getGrades()) {
                     saveGradeToDatabase(student.getId(), grade);
@@ -361,6 +140,4 @@ public class DatabaseManager {
             System.err.println("Error closing database connection: " + e.getMessage());
         }
     }
-    
-    
 }
